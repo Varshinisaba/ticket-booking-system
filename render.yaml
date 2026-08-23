@@ -1,0 +1,54 @@
+databases:
+  - name: ticket-booking-db
+    plan: free
+    databaseName: ticket_booking
+    user: ticket_booking
+
+services:
+  - type: keyvalue
+    name: ticket-booking-redis
+    plan: free
+    ipAllowList: []
+
+  - type: web
+    name: ticket-booking-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ticket-booking-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: ticket-booking-redis
+          type: keyvalue
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+      - key: SEAT_HOLD_TTL_SECONDS
+        value: "600"
+      - key: WAITLIST_OFFER_TTL_SECONDS
+        value: "900"
+      - key: MAIL_FROM_NAME
+        value: Ticket Booking System
+      - key: MAIL_PORT
+        value: "587"
+      - key: FRONTEND_URL
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_SERVER
+        sync: false
